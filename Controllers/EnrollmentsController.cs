@@ -36,47 +36,61 @@ namespace Wyklad5.Controllers
                 con.Open();
                 var tran = con.BeginTransaction();
 
-                try { 
-                com.CommandText = "select IdStudies from studies where name = @name";
-
-                com.Parameters.AddWithValue("name", request.Studies);
-
-                var dr = com.ExecuteReader();
-
-                if (!dr.Read())
+                try
                 {
-                    tran.Rollback();
-                    return BadRequest("Studia nie istniaja");
+
+                    com.CommandText = "select IdStudies from studies where indexnumber = @index";
+
+                    com.Parameters.AddWithValue("index", request.IndexNumber);
+
+                    var dr = com.ExecuteReader();
+
+                    if (dr.Read())
+                    {
+                        tran.Rollback();
+                        return BadRequest("Numer indeksu nie jest unikatowy");
+
+                    }
+
+                    com.CommandText = "select IdStudies from studies where name = @name";
+
+                    com.Parameters.AddWithValue("name", request.Studies);
+
+                    var dr1 = com.ExecuteReader();
+
+                    if (!dr1.Read())
+                    {
+                        tran.Rollback();
+                        return BadRequest("Studia nie istniaja");
+
+                    }
+
+                    int idstudies = (int)dr1["IdStudies"];
+
+                    com.CommandText = "INSERT INTO Student(IndexNumber, FirstName) VALUES(@Index, @Fname)";
+
+                    com.Parameters.AddWithValue("index", request.IndexNumber);
+
+                    com.ExecuteNonQuery();
+
+                    tran.Commit();
 
                 }
-
-                int idstudies = (int)dr["IdStudies"];
-
-                com.CommandText = "INSERT INTO Student(IndexNumber, FirstName) VALUES(@Index, @Fname)";
-
-                com.Parameters.AddWithValue("index", request.IndexNumber);
-
-                com.ExecuteNonQuery();
-
-                tran.Commit();
-
-            } catch(SqlException exc)
+                catch (SqlException exc)
                 {
                     tran.Rollback();
                 }
 
-            _service.EnrollStudent(request);
-            var response = new EnrollStudentResponse();
-            response.LastName = st.LastName;
-            //...
+                _service.EnrollStudent(request);
+                var response = new EnrollStudentResponse();
+                response.LastName = request.LastName;
 
-            return Ok(response);
+
+                return Created("http://localhost:5001/api/students?indexNumber=" + request.IndexNumber, response);
+            }
+
+
         }
-
-        //..
-
-        //..
-
-
     }
 }
+
