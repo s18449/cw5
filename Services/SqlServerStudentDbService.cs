@@ -18,21 +18,11 @@ namespace Wyklad5.Services
 
         public void EnrollStudent(EnrollStudentRequest request)
         {
-            //DTOs - Data Transfer Objects
-            //Request models
-            //==mapowanie==
-            //Modele biznesowe/encje (entity)
-            //==mapowanie==
-            //Response models
 
             var st = new Student();
             st.FirstName = request.FirstName;
-            //...
-            //...
-            //Micro ORM object-relational mapping
-            //problemami - impedance mismatch
 
-            using (var con = new SqlConnection(""))
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18449;Integrated Security=True"))
             using (var com = new SqlCommand())
             {
                 com.Connection = con;
@@ -42,23 +32,39 @@ namespace Wyklad5.Services
 
                 try
                 {
-                    //1. Czy studia istnieja?
-                    com.CommandText = "select IdStudies from studies where name=@name";
-                    com.Parameters.AddWithValue("name", request.Studies);
+
+                    com.CommandText = "select IdStudies from studies where indexnumber = @index";
+
+                    com.Parameters.AddWithValue("index", request.IndexNumber);
 
                     var dr = com.ExecuteReader();
-                    if (!dr.Read())
+
+                    if (dr.Read())
                     {
                         tran.Rollback();
-                        //return BadRequest("Studia nie istnieja");
-                        //...
-                    }
-                    int idstudies = (int)dr["IdStudies"];
+                        return BadRequest("Numer indeksu nie jest unikatowy");
 
-                    //x. Dodanie studenta
+                    }
+
+                    com.CommandText = "select IdStudies from studies where name = @name";
+
+                    com.Parameters.AddWithValue("name", request.Studies);
+
+                    var dr1 = com.ExecuteReader();
+
+                    if (!dr1.Read())
+                    {
+                        tran.Rollback();
+                        return BadRequest("Studia nie istnieja");
+
+                    }
+
+                    int idstudies = (int)dr1["IdStudies"];
+
                     com.CommandText = "INSERT INTO Student(IndexNumber, FirstName) VALUES(@Index, @Fname)";
+
                     com.Parameters.AddWithValue("index", request.IndexNumber);
-                    //...
+
                     com.ExecuteNonQuery();
 
                     tran.Commit();
@@ -68,13 +74,46 @@ namespace Wyklad5.Services
                 {
                     tran.Rollback();
                 }
+
+
+
             }
 
         }
 
         public void PromoteStudents(int semester, string studies)
         {
-            throw new NotImplementedException();
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18449;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+
+                con.Open();
+                var tran = con.BeginTransaction();
+
+                try
+                {
+
+                    com.CommandText = "select IdStudies from studies where name = @name AND semestr = @semester";
+
+                    com.Parameters.AddWithValue("name", studies);
+                    com.Parameters.AddWithValue("semester", semester);
+
+                    var dr1 = com.ExecuteReader();
+
+                    if (!dr1.Read())
+                    {
+                        tran.Rollback();
+                        return BadRequest("Studia nie istniaja");
+                    }
+
+
+                }
+                catch (SqlException exc)
+                {
+                    tran.Rollback();
+                }
+            }
         }
     }
 }
