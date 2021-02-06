@@ -42,10 +42,8 @@ namespace Wyklad5.Controllers
                 _service.PromoteStudents(semester, studies);
 
                 return Ok();
-            }
         }
-
-
     }
+
 }
 
