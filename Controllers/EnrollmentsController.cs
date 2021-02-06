@@ -88,9 +88,50 @@ namespace Wyklad5.Controllers
 
                 return Created("http://localhost:5001/api/students?indexNumber=" + request.IndexNumber, response);
             }
-
-
         }
+
+        [Route("promotions")]
+        [HttpPost]
+        public IActionResult PromoteStudents(string studies, string semester)
+        {
+            using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18449;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = con;
+
+                con.Open();
+                var tran = con.BeginTransaction();
+
+                try
+                {
+
+                    com.CommandText = "select IdStudies from studies where name = @name AND semestr = @semester";
+
+                    com.Parameters.AddWithValue("name", studies);
+                    com.Parameters.AddWithValue("semester", semester);
+
+                    var dr1 = com.ExecuteReader();
+
+                    if (!dr1.Read())
+                    {
+                        tran.Rollback();
+                        return BadRequest("Studia nie istniaja");
+                    }
+
+
+                }
+                catch (SqlException exc)
+                {
+                    tran.Rollback();
+                }
+
+
+
+
+            }
+        }
+
+
     }
 }
 
