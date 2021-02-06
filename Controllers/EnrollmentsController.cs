@@ -92,7 +92,7 @@ namespace Wyklad5.Controllers
 
         [Route("promotions")]
         [HttpPost]
-        public IActionResult PromoteStudents(string studies, string semester)
+        public IActionResult PromoteStudents(string studies, int semester)
         {
             using (var con = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18449;Integrated Security=True"))
             using (var com = new SqlCommand())
@@ -124,6 +124,10 @@ namespace Wyklad5.Controllers
                 {
                     tran.Rollback();
                 }
+
+                _service.PromoteStudents(semester, studies);
+
+                return Ok();
 
 
 
